@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import UserError
+from markupsafe import Markup
 
 
 class AccountInvoiceStockDeliveryWizard(models.TransientModel):
@@ -113,6 +114,21 @@ class AccountInvoiceStockDeliveryWizard(models.TransientModel):
         for move in new_picking.move_ids:
             move.quantity = move.product_uom_qty
         new_picking.with_context(skip_sanity_check=True).button_validate()
+
+        # Tarjeta visual en el chatter de la Factura Directa
+        out_link = new_picking._get_html_link()
+        html = f"""
+        <div style="border-left: 4px solid #198038; padding-left: 12px; margin: 4px 0;">
+            <h5 style="color: #012749; margin-bottom: 8px;">📤 <b>Despacho de Mercancía de Bodega</b></h5>
+            <div style="margin-bottom: 6px;">
+                <span style="background: #defbe6; color: #0e6027; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">ENTREGA VALIDADA</span>
+                <span style="margin-left: 6px;">Albarán: <b>{out_link}</b></span>
+                <ul style="margin: 4px 0 6px 18px; padding: 0;">
+        """
+        for l in self.line_ids.filtered(lambda x: x.quantity > 0):
+            html += f"<li><b>{l.product_id.display_name}</b> — Cant: {l.quantity} {l.uom_id.name}</li>"
+        html += "</ul></div></div>"
+        self.invoice_id.message_post(body=Markup(html))
 
         return {
             "name": _("Despacho Confirmado - %s") % new_picking.name,
