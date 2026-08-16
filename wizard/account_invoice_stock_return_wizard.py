@@ -48,6 +48,15 @@ class AccountInvoiceStockReturnWizard(models.TransientModel):
         store=True,
     )
 
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        if self.env.context.get("active_id") and self.env.context.get("active_model") == "account.move":
+            res["credit_note_id"] = self.env.context.get("active_id")
+        elif self.env.context.get("default_credit_note_id"):
+            res["credit_note_id"] = self.env.context.get("default_credit_note_id")
+        return res
+
     @api.depends("credit_note_id")
     def _compute_original_invoice(self):
         for wizard in self:
@@ -85,15 +94,19 @@ class AccountInvoiceStockReturnWizard(models.TransientModel):
             lines = [Command.clear()]
             move_source = wizard.credit_note_id
             if move_source:
+                line_fields = list(self.env["account.invoice.stock.return.wizard.line"]._fields)
+                line_default_tmpl = self.env["account.invoice.stock.return.wizard.line"].default_get(line_fields)
                 for line in move_source.invoice_line_ids:
-                    if line.product_id and not line.display_type:
+                    if line.product_id and line.display_type == "product":
                         qty = abs(line.quantity)
                         if qty > 0:
-                            lines.append(Command.create({
+                            line_data = dict(line_default_tmpl)
+                            line_data.update({
                                 "product_id": line.product_id.id,
                                 "quantity": qty,
                                 "uom_id": line.product_uom_id.id or line.product_id.uom_id.id,
-                            }))
+                            })
+                            lines.append(Command.create(line_data))
             wizard.line_ids = lines
 
     def action_confirm_return(self):
