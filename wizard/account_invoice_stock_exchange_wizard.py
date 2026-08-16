@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models, Command, _
 from odoo.exceptions import UserError
+from markupsafe import Markup
 
 
 class AccountInvoiceStockExchangeWizard(models.TransientModel):
@@ -180,21 +181,44 @@ class AccountInvoiceStockExchangeWizard(models.TransientModel):
             out_picking.with_context(skip_sanity_check=True).button_validate()
             pickings_created.append(out_picking)
 
-        # Registrar nota en el chatter de la factura
-        summary_msg = f"<b>Exchange / Cambio de Mercancía Procesado:</b><br/>"
+        # Registrar nota formateada con estilo visual en el chatter
+        diff_color = "#198038" if self.difference_amount == 0 else ("#002d9c" if self.difference_amount > 0 else "#fa4d56")
+        html = f"""
+        <div style="border-left: 4px solid #1192e8; padding-left: 12px; margin: 4px 0;">
+            <h5 style="color: #012749; margin-bottom: 8px;">🔄 <b>Exchange / Cambio de Mercancía</b></h5>
+        """
         if active_returns:
-            summary_msg += "<u>Productos Devueltos (Entrada):</u><ul>"
+            in_link = in_picking._get_html_link()
+            html += f"""
+            <div style="margin-bottom: 6px;">
+                <span style="background: #e5f6ff; color: #0043ce; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">📥 ENTRADA / DEVOLUCIÓN</span>
+                <span style="margin-left: 6px;">Albarán: <b>{in_link}</b></span>
+                <ul style="margin: 4px 0 6px 18px; padding: 0;">
+            """
             for l in active_returns:
-                summary_msg += f"<li>{l.product_id.display_name} - Cant: {l.quantity} {l.uom_id.name} (B/. {l.subtotal:.2f})</li>"
-            summary_msg += f"</ul>Albarán de Entrada: {in_picking.name}<br/>"
-        if active_deliveries:
-            summary_msg += "<u>Nuevos Productos Entregados (Salida):</u><ul>"
-            for l in active_deliveries:
-                summary_msg += f"<li>{l.product_id.display_name} - Cant: {l.quantity} {l.uom_id.name} (B/. {l.subtotal:.2f})</li>"
-            summary_msg += f"</ul>Albarán de Salida: {out_picking.name}<br/>"
-        summary_msg += f"<b>Diferencia Económica:</b> B/. {self.difference_amount:.2f}"
+                html += f"<li><b>{l.product_id.display_name}</b> — Cant: {l.quantity} {l.uom_id.name} (B/. {l.subtotal:.2f})</li>"
+            html += "</ul></div>"
 
-        self.invoice_id.message_post(body=summary_msg)
+        if active_deliveries:
+            out_link = out_picking._get_html_link()
+            html += f"""
+            <div style="margin-bottom: 6px;">
+                <span style="background: #defbe6; color: #0e6027; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px;">📤 SALIDA / NUEVA ENTREGA</span>
+                <span style="margin-left: 6px;">Albarán: <b>{out_link}</b></span>
+                <ul style="margin: 4px 0 6px 18px; padding: 0;">
+            """
+            for l in active_deliveries:
+                html += f"<li><b>{l.product_id.display_name}</b> — Cant: {l.quantity} {l.uom_id.name} (B/. {l.subtotal:.2f})</li>"
+            html += "</ul></div>"
+
+        html += f"""
+            <div style="margin-top: 6px; font-size: 13px;">
+                <b>Diferencia Económica:</b> <span style="font-weight: bold; color: {diff_color};">B/. {self.difference_amount:.2f}</span>
+            </div>
+        </div>
+        """
+
+        self.invoice_id.message_post(body=Markup(html))
 
         if len(pickings_created) == 1:
             return {
