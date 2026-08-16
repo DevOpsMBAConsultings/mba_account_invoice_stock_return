@@ -46,6 +46,11 @@
                         type="object"
                         class="btn-secondary"
                         invisible="move_type != 'out_invoice' or state != 'posted' or has_sale_order or stock_delivery_picking_id"/>
+                <button name="action_open_stock_exchange_wizard"
+                        string="Exchange / Cambio"
+                        type="object"
+                        class="btn-secondary"
+                        invisible="move_type != 'out_invoice' or state != 'posted'"/>
             </xpath>
 
             <!-- Fields after reversed entry / invoice origin -->

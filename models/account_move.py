@@ -61,3 +61,17 @@ class AccountMove(models.Model):
                 "default_invoice_id": self.id,
             },
         }
+
+    def action_open_stock_exchange_wizard(self):
+        """Abre el wizard de intercambio de mercancía para Facturas."""
+        self.ensure_one()
+        return {
+            "name": _("Exchange / Cambio de Mercancía"),
+            "type": "ir.actions.act_window",
+            "res_model": "account.invoice.stock.exchange.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_invoice_id": self.id,
+            },
+        }
