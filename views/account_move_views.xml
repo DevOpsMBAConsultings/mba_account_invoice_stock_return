@@ -8,6 +8,24 @@
             <!-- Invisible helper -->
             <xpath expr="//field[@name='partner_id']" position="after">
                 <field name="has_sale_order" invisible="1"/>
+                <field name="reconciliation_alert_type" invisible="1"/>
+            </xpath>
+
+            <!-- Semáforo / Banner informativo de conciliación en Notas de Crédito -->
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-success d-flex align-items-center mb-2" role="alert"
+                     invisible="reconciliation_alert_type != 'auto_reconciled'">
+                    <span>✅ <strong>Nota de Crédito Cruzada:</strong> Este documento se aplicó automáticamente contra la Factura original. Ambas cuentas quedan saldadas en B/. 0.00.</span>
+                </div>
+                <div class="alert alert-warning d-flex align-items-center mb-2" role="alert"
+                     invisible="reconciliation_alert_type != 'credit_available'">
+                    <span>ℹ️ <strong>Saldo a Favor del Cliente:</strong> La factura original ya había sido pagada previamente. Esta Nota de Crédito queda como saldo a favor del cliente para futuras compras o reembolso.</span>
+                </div>
+                <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert"
+                     invisible="reconciliation_alert_type != 'pending_reconcile'">
+                    <span>⚡ <strong>Factura con Saldo Pendiente:</strong> La factura original tiene saldo por saldar.</span>
+                    <button name="action_auto_reconcile_with_invoice" type="object" string="Cruzar Saldo Ahora" class="btn btn-sm btn-primary"/>
+                </div>
             </xpath>
 
             <!-- Stat buttons -->

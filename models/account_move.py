@@ -24,6 +24,15 @@ class AccountMove(models.Model):
         compute="_compute_has_sale_order",
         store=True,
     )
+    reconciliation_alert_type = fields.Selection(
+        [
+            ("auto_reconciled", "Cruzada Automáticamente"),
+            ("credit_available", "Saldo a Favor del Cliente"),
+            ("pending_reconcile", "Pendiente de Cruzar"),
+        ],
+        string="Alerta de Conciliación",
+        compute="_compute_reconciliation_alert",
+    )
 
     @api.depends("invoice_line_ids.sale_line_ids", "invoice_origin")
     def _compute_has_sale_order(self):
@@ -33,6 +42,40 @@ class AccountMove(models.Model):
                 or (move.invoice_origin and self.env["sale.order"].search_count([("name", "=", move.invoice_origin)]))
             )
             move.has_sale_order = has_so
+
+    @api.depends("state", "move_type", "reversed_entry_id", "payment_state", "amount_residual")
+    def _compute_reconciliation_alert(self):
+        for move in self:
+            alert = False
+            if move.move_type == "out_refund" and move.state == "posted" and move.reversed_entry_id:
+                if move.payment_state in ("paid", "in_payment", "reversed"):
+                    alert = "auto_reconciled"
+                elif move.reversed_entry_id.payment_state in ("paid", "in_payment"):
+                    alert = "credit_available"
+                elif move.reversed_entry_id.amount_residual > 0:
+                    alert = "pending_reconcile"
+            move.reconciliation_alert_type = alert
+
+    def action_auto_reconcile_with_invoice(self):
+        """Cruza automáticamente la Nota de Crédito con su Factura Original."""
+        self.ensure_one()
+        if self.move_type == "out_refund" and self.reversed_entry_id:
+            lines = (self.line_ids + self.reversed_entry_id.line_ids).filtered(
+                lambda l: l.account_id.account_type == "asset_receivable" and not l.reconciled
+            )
+            if lines:
+                lines.reconcile()
+
+    def action_post(self):
+        """Al publicar la Nota de Crédito, auto-concilia con la factura si tiene saldo pendiente."""
+        res = super().action_post()
+        for move in self:
+            if move.move_type == "out_refund" and move.reversed_entry_id and move.reversed_entry_id.amount_residual > 0:
+                try:
+                    move.action_auto_reconcile_with_invoice()
+                except Exception:
+                    pass
+        return res
 
     def action_open_stock_return_wizard(self):
         """Abre el wizard de devolución de inventario para Nota de Crédito o Factura Anulada."""
