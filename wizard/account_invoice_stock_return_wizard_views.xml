@@ -27,10 +27,10 @@
                     <notebook>
                         <page string="Productos a Recibir" name="products_return">
                             <field name="line_ids">
-                                <list editable="bottom" create="0">
-                                    <field name="product_id" readonly="1"/>
+                                <list editable="bottom" create="1">
+                                    <field name="product_id" force_save="1"/>
                                     <field name="quantity"/>
-                                    <field name="uom_id" readonly="1"/>
+                                    <field name="uom_id" force_save="1"/>
                                 </list>
                             </field>
                         </page>
