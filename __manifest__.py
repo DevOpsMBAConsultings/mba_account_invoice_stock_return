@@ -1,8 +1,8 @@
 {
     "name": "Devolución, Despacho y Exchange de Inventario desde Facturación (MBA Consultings)",
-    "version": "18.0.1.2.2",
+    "version": "18.0.1.3.0",
     "category": "Inventory/Accounting",
-    "summary": "Devolución automática desde NC, despacho desde facturas directas y exchange mano a mano | MBA Consultings",
+    "summary": "Devolución desde NC y facturas anuladas, despacho directo y exchange mano a mano | MBA Consultings",
     "author": "MBA Consultings, Brooks Gonzalez",
     "website": "https://mbaconsultings.com",
     "license": "LGPL-3",

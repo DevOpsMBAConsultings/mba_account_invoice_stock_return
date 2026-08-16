@@ -16,7 +16,7 @@
                         type="object"
                         name="action_open_stock_return_wizard"
                         icon="fa-truck"
-                        invisible="move_type != 'out_refund' or stock_return_picking_id">
+                        invisible="(move_type == 'out_refund' and stock_return_picking_id) or (move_type == 'out_invoice' and (state != 'cancel' or stock_return_picking_id))">
                     <div class="o_field_widget o_stat_info">
                         <span class="o_stat_text">Regresar a</span>
                         <span class="o_stat_text">Bodega</span>
@@ -26,7 +26,7 @@
                         type="object"
                         name="action_open_stock_delivery_wizard"
                         icon="fa-truck"
-                        invisible="move_type != 'out_invoice' or has_sale_order or stock_delivery_picking_id">
+                        invisible="move_type != 'out_invoice' or has_sale_order or stock_delivery_picking_id or state == 'cancel'">
                     <div class="o_field_widget o_stat_info">
                         <span class="o_stat_text">Despachar de</span>
                         <span class="o_stat_text">Bodega</span>
@@ -40,7 +40,7 @@
                         string="Devolver a Bodega"
                         type="object"
                         class="btn-secondary"
-                        invisible="move_type != 'out_refund' or state != 'posted' or stock_return_picking_id"/>
+                        invisible="(move_type == 'out_refund' and (state != 'posted' or stock_return_picking_id)) or (move_type == 'out_invoice' and (state != 'cancel' or stock_return_picking_id))"/>
                 <button name="action_open_stock_delivery_wizard"
                         string="Despachar de Bodega"
                         type="object"

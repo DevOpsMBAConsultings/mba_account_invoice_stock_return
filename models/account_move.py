@@ -35,17 +35,20 @@ class AccountMove(models.Model):
             move.has_sale_order = has_so
 
     def action_open_stock_return_wizard(self):
-        """Abre el wizard de devolución de inventario para esta Nota de Crédito."""
+        """Abre el wizard de devolución de inventario para Nota de Crédito o Factura Anulada."""
         self.ensure_one()
+        ctx = {}
+        if self.move_type == "out_refund":
+            ctx["default_credit_note_id"] = self.id
+        else:
+            ctx["default_invoice_id"] = self.id
         return {
             "name": _("Devolución de Productos a Bodega"),
             "type": "ir.actions.act_window",
             "res_model": "account.invoice.stock.return.wizard",
             "view_mode": "form",
             "target": "new",
-            "context": {
-                "default_credit_note_id": self.id,
-            },
+            "context": ctx,
         }
 
     def action_open_stock_delivery_wizard(self):
