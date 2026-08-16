@@ -1,6 +1,6 @@
 {
     "name": "Devolución de Inventario desde Nota de Crédito (MBA Consultings)",
-    "version": "18.0.1.0.0",
+    "version": "18.0.1.0.1",
     "category": "Inventory/Accounting",
     "summary": "Asistente para devolución automática a bodega desde Notas de Crédito | MBA Consultings",
     "author": "MBA Consultings, Brooks Gonzalez",

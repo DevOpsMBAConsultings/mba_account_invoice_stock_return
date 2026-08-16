@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import api, fields, models, _
+from odoo import api, fields, models, Command, _
 from odoo.exceptions import UserError
 
 
@@ -42,10 +42,28 @@ class AccountInvoiceStockReturnWizard(models.TransientModel):
         "account.invoice.stock.return.wizard.line",
         "wizard_id",
         string="Líneas a Devolver",
-        compute="_compute_lines",
-        readonly=False,
-        store=True,
     )
+
+    @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        credit_note_id = self.env.context.get("default_credit_note_id") or res.get("credit_note_id")
+        if credit_note_id and "line_ids" in (fields_list or []):
+            credit_note = self.env["account.move"].browse(credit_note_id)
+            lines = []
+            move_source = credit_note if credit_note.invoice_line_ids else (credit_note.reversed_entry_id or credit_note.debit_origin_id)
+            if move_source:
+                for line in move_source.invoice_line_ids:
+                    if line.product_id and line.product_id.is_storable and not line.display_type:
+                        qty = abs(line.quantity)
+                        if qty > 0:
+                            lines.append(Command.create({
+                                "product_id": line.product_id.id,
+                                "quantity": qty,
+                                "uom_id": line.product_uom_id.id or line.product_id.uom_id.id,
+                            }))
+            res["line_ids"] = lines
+        return res
 
     @api.depends("credit_note_id")
     def _compute_original_invoice(self):
@@ -77,21 +95,6 @@ class AccountInvoiceStockReturnWizard(models.TransientModel):
                 wizard.warehouse_id = self.env["stock.warehouse"].search(
                     [("company_id", "=", wizard.credit_note_id.company_id.id)], limit=1
                 )
-
-    @api.depends("credit_note_id", "original_invoice_id", "picking_id")
-    def _compute_lines(self):
-        for wizard in self:
-            lines = []
-            move_source = wizard.credit_note_id if wizard.credit_note_id.invoice_line_ids else wizard.original_invoice_id
-            if move_source:
-                for line in move_source.invoice_line_ids:
-                    if line.product_id and line.product_id.is_storable:
-                        lines.append((0, 0, {
-                            "product_id": line.product_id.id,
-                            "quantity": abs(line.quantity),
-                            "uom_id": line.product_uom_id.id or line.product_id.uom_id.id,
-                        }))
-            wizard.line_ids = lines
 
     def action_confirm_return(self):
         """Genera el movimiento de entrada a bodega y lo valida automáticamente."""
