@@ -33,6 +33,32 @@ class AccountMove(models.Model):
         string="Alerta de Conciliación",
         compute="_compute_reconciliation_alert",
     )
+    credit_note_count = fields.Integer(
+        string="Cantidad de Notas de Crédito",
+        compute="_compute_credit_note_count",
+    )
+
+    @api.depends("reversal_move_ids")
+    def _compute_credit_note_count(self):
+        for move in self:
+            move.credit_note_count = len(move.reversal_move_ids)
+
+    def action_view_credit_notes(self):
+        """Abre las Notas de Crédito vinculadas a esta Factura."""
+        self.ensure_one()
+        action = {
+            "name": _("Notas de Crédito de %s") % self.name,
+            "type": "ir.actions.act_window",
+            "res_model": "account.move",
+            "context": {"default_move_type": "out_refund"},
+        }
+        if len(self.reversal_move_ids) == 1:
+            action["views"] = [(False, "form")]
+            action["res_id"] = self.reversal_move_ids[0].id
+        else:
+            action["views"] = [(False, "list"), (False, "form")]
+            action["domain"] = [("id", "in", self.reversal_move_ids.ids)]
+        return action
 
     @api.depends("invoice_line_ids.sale_line_ids", "invoice_origin")
     def _compute_has_sale_order(self):
