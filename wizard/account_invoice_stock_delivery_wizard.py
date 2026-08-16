@@ -97,6 +97,7 @@ class AccountInvoiceStockDeliveryWizard(models.TransientModel):
                     "name": l.product_id.display_name,
                     "product_id": l.product_id.id,
                     "product_uom_qty": l.quantity,
+                    "quantity": l.quantity,
                     "product_uom": l.uom_id.id,
                     "picking_id": new_picking.id,
                     "location_id": src_location.id,
@@ -109,7 +110,9 @@ class AccountInvoiceStockDeliveryWizard(models.TransientModel):
 
         # Validar inmediatamente a estado DONE
         new_picking.action_assign()
-        new_picking.button_validate()
+        for move in new_picking.move_ids:
+            move.quantity = move.product_uom_qty
+        new_picking.with_context(skip_sanity_check=True).button_validate()
 
         return {
             "name": _("Despacho Confirmado - %s") % new_picking.name,
