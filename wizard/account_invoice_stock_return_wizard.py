@@ -164,7 +164,6 @@ class AccountInvoiceStockReturnWizard(models.TransientModel):
                 active_model="stock.picking"
             ).create({
                 "picking_id": self.picking_id.id,
-                "location_id": self.warehouse_id.lot_stock_id.id,
             })
             
             nc_product_qtys = {l.product_id.id: l.quantity for l in self.line_ids}
