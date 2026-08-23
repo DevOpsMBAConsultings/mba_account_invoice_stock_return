@@ -1,6 +1,6 @@
 {
     "name": "Devolución, Despacho, Exchange y Auto-Conciliación (MBA Consultings)",
-    "version": "18.0.1.5.1",
+    "version": "18.0.1.5.2",
     "category": "Inventory/Accounting",
     "summary": "Devolución desde NC y facturas anuladas, despacho directo, exchange, auto-conciliación y stat button de NCs | MBA Consultings",
     "author": "MBA Consultings, Brooks Gonzalez",
